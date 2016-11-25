@@ -1,0 +1,293 @@
+\documentclass[]{jarticle}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{color}
+\usepackage[dvipdfmx]{hyperref}
+
+\newcommand*{\musigmaii}[0]{\mu, \sigma^2}
+\newcommand*{\iisigmaii}[0]{2\sigma^2}
+\begin{document}
+	
+\section*{第１章 強化学習の基礎的理論}
+
+\begin{itemize}
+	\item 「これからの強化学習」（森北出版）\href{https://www.amazon.co.jp/dp/4627880316}{(\textcolor{blue}{\underline{amazon}})}を自分用メモとして要約してみます。いろいろ省略しています。
+	\item \textcolor{blue}{青字は私のコメントであり、書籍に書かれているものではありません。}
+\end{itemize}
+
+TODO:フォーマットの修正 
+TODO:算式の確認
+
+\subsection*{1.1 強化学習とは}
+
+\subsubsection*{探索と利用のトレードオフ}
+
+強化学習の問題では、エージェントは環境に関しての事前知識を持っていないことが多いため、
+探索と利用のトレードオフの問題がある。
+探索と利用のトレードオフの典型的な問題として多腕バンディット問題がある。
+
+\subsubsection*{多腕バンディット問題に対するアルゴリズム}
+多腕バンディット問題に対するアルゴリズムとしては、以下がある。
+
+\begin{itemize}
+	\item Argorithm 1.1.1 greedy アルゴリズム
+
+\begin{itemize}
+\item まだn回選んだことのない腕がある場合、その腕を選ぶ
+\item それ以外の場合、これまでの報酬の平均が最大の腕を選ぶ 
+\end{itemize}
+	
+	\item Argorithm 1.1.2 $\epsilon$-greedy アルゴリズム
+
+\begin{itemize}
+	\item 確率$\epsilon$で、すべての腕からランダムに選ぶ 
+	\item 確率$1-\epsilon$で、これまでの報酬の平均$\mu_i$が最大の腕を選ぶ
+\end{itemize}
+
+\item Argorithm 1.1.3 楽観的初期値法
+
+報酬の上界を$r_{sup}$とする。 \\
+腕$i$を選んだ回数$n_{i}$、これまでの報酬の平均$\mu_i$ \\
+$\mu^{'}_{i} = \dfrac{n_{i}\mu_i + Kr_{sup}}{n_{i}+K}$  が最大のものを選ぶ
+
+\item Argorithm 1.1.4 UCB1アルゴリズム
+
+払戻額の最大値と最小値の差を$R$とする。
+\begin{itemize}
+	\item まだn回選んだことのない腕がある場合、その腕を選ぶ　
+	\item そうでない場合、各々の腕から得られる報酬の信頼区間の半幅　\\ $Ui = R\sqrt{\dfrac{2\ln(\sum n_i)}{n_i}}$ を求め、$\mu_i+U_i$が最大の腕を選ぶ
+\end{itemize}
+	
+\end{itemize}
+
+\subsubsection*{memo}
+\textcolor{blue}{UCB1の信頼区間の計算方法は良くわからなかったが、分散を保守的に見積もっているということだろうか？}
+
+\subsection*{1.2 強化学習の構成要素}
+
+\subsubsection*{強化学習の枠組み}
+
+強化学習の枠組みはエージェント・環境・それらの相互作用からなる。
+環境は原則として所与で、エージェントの内部構造を設計する。
+\begin{itemize}
+	\item エージェント：意思決定の主体　
+	\item 環境：エージェントが相互作用を行う対象
+	\item 相互作用：情報の受け取りと引き渡しを行うこと
+\end{itemize}
+
+\subsubsection*{マルコフ決定過程(MDP)}
+基本的な数理モデルとしてマルコフ決定過程がある。
+マルコフ決定過程(MDP)においては、時間ステップごとに以下の情報をやり取りする。
+\begin{itemize}
+	\item 状態：エージェントが置かれている状況
+	\item 行動：エージェントが環境に対して行う働きかけの種類
+	\item 報酬：その行動の即時的な良さ
+\end{itemize}
+マルコフ決定過程は、状態空間$S$, 行動空間$A(s)$, 初期状態分布$P_0$, 状態遷移確率$P(s'|s,a)$, 報酬関数$(s,a,s')$により記述される確率過程である。\\
+なお、
+\begin{itemize}
+	\item 次の状態は現在の状態および行動によって確率的に決定される
+	\item 報酬関数は決定的な場合と確率的に求まる場合がある
+\end{itemize}
+以下のように用語を定義する。
+\begin{itemize}
+	\item 方策$\pi$：エージェントが行動を決定するためのルール。良い方策とはより多くの収益を得られる方策である。方策には状態sのもとで常に同じ行動である決定論的方策と確率的に行動を決定する確率論的方策がある。
+	\item 収益：累積の報酬であり、割引報酬和が良く用いられる。
+	\item 状態価値$V^{\pi}(s)$:ある状態、ある方策のもとでの収益の期待値
+	\item 最適方策$\pi^*$:どの状態でも他の方策以上の状態価値を持つ方策。最適方策は少なくとも一つ存在する。
+    \item 最適状態価値関数$V^{\pi^*}(s)$:最適方策の下での状態価値
+    \item 行動価値$Q^\pi(s,a)$:ある方策で状態a, 行動sを取った場合の報酬の期待値
+    \item 最適行動価値関数$Q^*(s,a)$:最適方策の下での行動価値
+\end{itemize}
+
+\subsubsection*{方策の定め方}
+以下のように方策の定め方がある。他にもいくつかのパラメータを用いて直接方策を定める方法がある。(1.4節参照)
+\begin{itemize}
+	\item greedy方策：最も行動価値の大きな行動を選ぶ
+	\item $\epsilon$-greedy方策：確率$\epsilon$でランダムに行動し、確率$1-\epsilon$で最も行動価値の大きな行動を選ぶ
+	\item ボルツマン方策:$\pi(a|s)=\dfrac{\exp(Q(s,a)/T)}{\sum_{b\in{A}}exp(Q(s,b)/T)}$、Tは温度パラメータ
+\end{itemize}
+	
+
+\subsection*{1.3 価値反復に基づくアルゴリズム}
+
+\subsubsection*{ベルマン方程式}
+ある方策$\pi$のもとでの価値関数$V^\pi(s)$、行動価値関数$Q^{\pi}(s,a)$は、報酬が割引報酬和のとき、
+ベルマン方程式により表すことができる。なお、ベルマン方程式から直接価値を求めるには、状態遷移確率が予め分かっている必要があるが、一般には状態遷移確率は未知である。\\
+ベルマン方程式：
+\begin{equation*}
+V^{\pi}(s) = \sum_{a\in{S}} \pi(a|s)  P(s' |s, a) (r(s,a,s') + \gamma V(s')) 
+\end{equation*}
+\begin{equation*}
+Q^{\pi}(s,a) = \sum_{a\in{S}} P(s' |s, a) (\gamma P(a'|s')+ Q^{\pi}(s',a'))
+\end{equation*}
+
+\subsubsection*{Sarsa}
+ベルマン方程式を試行錯誤で解くアルゴリズムの１つがSarsaである。
+以下の式でアップデートする。
+\begin{equation*}
+Q（S_t, A_t) = Q（S_t, A_t) + \alpha (R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t, A_t))
+\end{equation*}
+ここで、$R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t, A_t)$ をTD誤差と呼ぶ。
+\\
+
+\subsubsection*{ベルマン最適方程式}
+最適状態価値関数や、最適行動価値関数には、ベルマン最適方程式がある。
+\begin{equation*}
+V^{*}(s) = \underset{a \in A}{\max} \sum_{s'\in{S}} P(s' |s, a) (r(s,a,s') + \gamma V^{*}(s'))
+\end{equation*}
+\begin{equation*}
+Q^{*}(s) = \sum_{s'\in{S}} P(s' |s, a) (\gamma \: \underset{a' \in A}{\max} Q^{*}(s',a'))
+\end{equation*}
+状態遷移確率が既知であればDPで計算可能だが、状態遷移確率が未知の場合は試行錯誤で計算するため、Q-learningなどを使用することになる。
+
+\subsubsection*{Q-learning}
+Q-learningでは、Sarsaとは異なり、遷移後の行動選択についての確率は含まれず、常に最大の行動価値を目標値として更新する
+\begin{equation*}
+Q（S_t, A_t) = Q（S_t, A_t) + \alpha (R_{t+1} + \gamma \underset{a' \in A(s')}{\max} Q(S_{t+1},　a') - Q(S_t, A_t))
+\end{equation*}
+
+\subsubsection*{方策のアップデート}
+SarsaやQ-learningは方策に対する価値関数を学習するものであり、より良い方策を求めるためには、方策をアップデートする必要がある。以下のアプローチに分けられる。
+\begin{itemize}
+\item 価値反復法: 方策をgreedy方策などの価値関数から簡単に計算する方策に限定する。方策を表現する必要がないため、実装が簡単。
+\item 方策反復法: 学習状態として方策を表現し、それを利用して価値関数を計算する。多様な方策を表現できる。
+\end{itemize}
+
+\subsubsection*{memo}
+\textcolor{blue}{ベルマン方程式やベルマン最適方程式は、単に状態価値や行動価値の式の時点を１時点分展開しただけだと思われる。}
+
+\subsection*{1.4 方策勾配に基づくアルゴリズム}
+
+\subsubsection*{確率的方策の表現}
+期待収益を目的関数$J(\theta)$として、これを最大化する確率的方策$\pi_{\theta}$のパラメータ$\theta$を求めることを考える。
+$\pi_{\theta}$は$\theta$に関して微分可能な関数であるとする。
+
+状態空間と行動空間がともに離散の場合には以下のように表せる。
+\begin{equation*}
+\pi_\theta(a|s) = \dfrac{\exp(\theta(s,a))}{\sum_{b \in A} \exp(\theta_{sb})}
+\end{equation*}
+
+状態空間が連続、行動空間が離散の場合には以下のように表せる。（$\phi(s,a)$ は任意の関数。）
+\begin{equation*}
+\pi_\theta(a|s) = \dfrac{\exp(\theta^T \phi(s,a))}{\sum_{b \in A} \exp(\theta^T \phi(s,b))}\end{equation*}
+
+\subsubsection*{勾配法}
+勾配法では、パラメータ$\theta^t$を勾配方向へ以下のように更新していく。
+\begin{equation*}
+\theta^{t+1} = \theta^t + \eta \triangledown_\theta J(\theta)
+\end{equation*}
+
+方策勾配定理によると（割引報酬の期待値の場合）、勾配は行動価値関数を用いて以下のように表される。
+\begin{equation*}
+\triangledown_\theta J(\theta) = 
+E_{\pi_{\theta}} [\dfrac{\partial \pi(a|s)}{\partial \theta}  \dfrac{1}{\pi(a|s)} Q^{\pi}(s,a)] 
+= E_{\pi_{\theta}} [\dfrac{\partial \pi(a|s)}{\partial \theta}  \dfrac{1}{\pi(a|s)} Q^{\pi}(s,a)]
+\end{equation*}
+
+勾配は解析的に求まらないため、行動を行ったサンプルから近似する必要がある。
+また行動価値関数についても未知なので、推定する必要がある。
+
+\subsubsection*{即時報酬での近似}
+最も単純には行動価値関数を以下のように即時報酬で近似する方法で、REINFORCEアルゴリズムに用いられる。
+\begin{equation*}
+Q^\pi(s_t, a_t) \approx R_t
+\end{equation*}
+
+\subsubsection*{Actor-Criticモデル}
+Actor-Criticモデルという、方策のモデルと行動価値関数のモデルを別々にモデル化する方法がある。
+状態空間や行動空間が連続の場合、何らかの関数により行動価値関数を近似する必要がある。以下のモデルが考えられる。
+\begin{equation*}
+Q^w(s, a) = w^T\phi(s,a)
+\end{equation*}
+$w$はパラメータベクトル。$\phi(s,a)$は任意の関数であるが、$\triangledown_\theta \log \pi_\theta (a|s) $を採用すると都合が良い。 \\
+
+\subsubsection*{自然勾配法}
+パラメータ$\theta$が確率分布を定めていることを勘案し、確率分布間の距離をKLダイバージェンスで定めると、自然勾配とよばれる勾配方向が導出される。
+\begin{equation*}
+\tilde{\triangledown}_\theta J(\theta) = F^{-1}(\theta) \triangledown_\theta J(\theta)
+\end{equation*}
+\begin{equation*}
+F(\theta) = E[(\triangledown_\theta \log \pi_\theta(a|s)(\triangledown_\theta \log \pi_\theta(a|s)^T]
+\end{equation*}
+
+\subsubsection*{具体的なアルゴリズム例}
+（省略）
+
+\subsubsection*{memo}
+\textcolor{blue}{
+\begin{itemize}
+	\item 行動価値関数の近似に即時報酬しか使わないのでは、さすがに一定程度複雑なタスクには適用できなさそうである。
+	\item 勾配方策定理の$\dfrac{1}{\pi(a|s)}$が出てくる理由は、期待値を取っているためだと思われる。
+	\item 自然勾配法は、どういった流れで"自然勾配"を求めたのかはわからなかった。ただ、1.4.3の自然勾配方策法で示されているように、このように勾配を採用すると自然勾配は$w$となりシンプルな計算となるようである。
+\end{itemize}	
+}
+
+\subsection*{1.5 部分観測マルコフ決定過程と強化学習}
+
+\subsubsection*{部分観測マルコフ決定過程(POMDP)}
+
+部分観測マルコフ決定過程は、マルコフ決定過程に以下を加えたもの。
+\begin{itemize}
+	\item 観測集合$\Omega$：エージェントの観測を要素に持つ有限な集合
+	\item 観測関数$O(s',a,o)$:エージェントの観測を記述する関数
+\end{itemize}
+なお、エージェントは観測を知ることはできるが、状態は知ることができない。 
+
+\subsubsection*{解法の分類}
+
+\begin{itemize}
+	\item 環境に対するモデルの事前知識
+	\begin{itemize}
+		\item モデルベースド：事前知識として環境の知識を陽に用いる
+		\item モデルフリー：環境の知識を陽に用いない。Q-learningは直接環境の知識を用いるわけではないので、モデルフリーである。
+	\end{itemize}
+	
+	\item 価値や方策を求めるタイミングの視点
+	\begin{itemize}
+		\item オフライン：価値計算や方策を完全に求めてから、得られた方策を実行する
+		\item オンライン：価値計算や方策を求めながら、その時点で得られている方策を実行する
+	\end{itemize}
+
+	\item 価値や方策を求める理論的な視点
+	\begin{itemize}
+		\item 厳密解法：理論通り正確に解を求める方法
+		\item 近似解法：求解が難しい場合に近似的に解を求める方法
+		\item ヒューリスティクス：理論的な裏づけはないが実証実験で確かめられている方法
+	\end{itemize}
+
+\end{itemize}
+
+\subsubsection*{信念状態}
+どの状態にいるかの確率を並べてできる状態。
+状態の要素数が２つであれば、$b(s_1, s_2) = (p_1, p_2)$ と表される。ここで、$0 \leq p_1, p_2 \leq 1, \: p_1 + p_2 = 1$である。
+
+\subsubsection*{$\alpha$-ベクトル}
+ある観測に対してどのような行動を取るかを定めた場合の価値関数(状態数の次元を持つベクトル) 
+
+ある信念状態に対する価値関数を、$\Gamma$を$\alpha$-ベクトルの集合として以下のように表せる。
+\begin{equation*}
+V(b) = \underset{\alpha \in \Gamma}{\max}\sum_{s \in S}b(s)\alpha(s)
+\end{equation*}\\
+
+\subsubsection*{exact value iteration}
+価値関数をステップで展開した式を用いて、価値関数を更新する。しかしながら、更新とともに$\alpha$-ベクトルの数がどんどん増えていくため、枝狩りを行っても計算量が厳しい。
+
+\subsubsection*{Point-Based Value Iteration}
+（省略）
+
+\subsubsection*{関連するモデル、モデルフリーな手法}
+（省略）
+	
+\subsubsection*{MEMO}
+\textcolor{blue}{\begin{itemize}
+		\item POMDPでは状態遷移確率や観測関数は既知という前提なのかどうかは良くわからなかった。
+		\item この節の中盤の議論は、信念状態を状態だとみなせば、POMDPはMDPの枠組みで考えられるということだと思った。（計算は複雑になるが）
+		\item Point-Based Value Iterationは、ある信念状態に限定して$\alpha$-ベクトルを更新していくということだと思うのだが、部分集合Bの選び方など、ロジックは良くわからなかった。。
+\end{itemize}}
+
+
+\end{document}
+
+
