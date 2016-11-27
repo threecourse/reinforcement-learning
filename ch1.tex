@@ -16,9 +16,6 @@
 	\item \textcolor{blue}{青字は私のコメントであり、書籍に書かれているものではありません。}
 \end{itemize}
 
-TODO:フォーマットの修正 
-TODO:算式の確認
-
 \subsection*{1.1 強化学習とは}
 
 \subsubsection*{探索と利用のトレードオフ}
@@ -35,12 +32,13 @@ TODO:算式の確認
 
 \begin{itemize}
 \item まだn回選んだことのない腕がある場合、その腕を選ぶ
-\item それ以外の場合、これまでの報酬の平均が最大の腕を選ぶ 
+\item それ以外の場合、これまでの報酬の平均$\mu_i$が最大の腕を選ぶ 
 \end{itemize}
 	
 	\item Argorithm 1.1.2 $\epsilon$-greedy アルゴリズム
 
 \begin{itemize}
+    \item まだn回選んだことのない腕がある場合、その腕を選ぶ
 	\item 確率$\epsilon$で、すべての腕からランダムに選ぶ 
 	\item 確率$1-\epsilon$で、これまでの報酬の平均$\mu_i$が最大の腕を選ぶ
 \end{itemize}
@@ -48,7 +46,7 @@ TODO:算式の確認
 \item Argorithm 1.1.3 楽観的初期値法
 
 報酬の上界を$r_{sup}$とする。 \\
-腕$i$を選んだ回数$n_{i}$、これまでの報酬の平均$\mu_i$ \\
+腕$i$を選んだ回数を$n_{i}$、これまでの報酬の平均を$\mu_i$とする。 \\
 $\mu^{'}_{i} = \dfrac{n_{i}\mu_i + Kr_{sup}}{n_{i}+K}$  が最大のものを選ぶ
 
 \item Argorithm 1.1.4 UCB1アルゴリズム
@@ -56,7 +54,7 @@ $\mu^{'}_{i} = \dfrac{n_{i}\mu_i + Kr_{sup}}{n_{i}+K}$  が最大のものを選
 払戻額の最大値と最小値の差を$R$とする。
 \begin{itemize}
 	\item まだn回選んだことのない腕がある場合、その腕を選ぶ　
-	\item そうでない場合、各々の腕から得られる報酬の信頼区間の半幅　\\ $Ui = R\sqrt{\dfrac{2\ln(\sum n_i)}{n_i}}$ を求め、$\mu_i+U_i$が最大の腕を選ぶ
+	\item そうでない場合、各々の腕から得られる報酬の信頼区間の半幅　\\ $U_i = R\sqrt{\dfrac{2\ln(\sum n_i)}{n_i}}$ を求め、$\mu_i+U_i$が最大の腕を選ぶ
 \end{itemize}
 	
 \end{itemize}
@@ -117,10 +115,10 @@ $\mu^{'}_{i} = \dfrac{n_{i}\mu_i + Kr_{sup}}{n_{i}+K}$  が最大のものを選
 ベルマン方程式により表すことができる。なお、ベルマン方程式から直接価値を求めるには、状態遷移確率が予め分かっている必要があるが、一般には状態遷移確率は未知である。\\
 ベルマン方程式：
 \begin{equation*}
-V^{\pi}(s) = \sum_{a\in{S}} \pi(a|s)  P(s' |s, a) (r(s,a,s') + \gamma V(s')) 
+V^{\pi}(s) = \sum_{a\in{A(s)}} \pi(a|s)  \sum_{s' \in{S}} P(s' |s, a) (r(s,a,s') + \gamma V^{\pi}(s')) 
 \end{equation*}
 \begin{equation*}
-Q^{\pi}(s,a) = \sum_{a\in{S}} P(s' |s, a) (\gamma P(a'|s')+ Q^{\pi}(s',a'))
+Q^{\pi}(s,a) = \sum_{s'\in{S}} P(s' |s, a) (r(s,a,s') + \sum_{a \in{A(s')}} \gamma P(a'|s')  Q^{\pi}(s',a'))
 \end{equation*}
 
 \subsubsection*{Sarsa}
@@ -138,14 +136,14 @@ Q（S_t, A_t) = Q（S_t, A_t) + \alpha (R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(
 V^{*}(s) = \underset{a \in A}{\max} \sum_{s'\in{S}} P(s' |s, a) (r(s,a,s') + \gamma V^{*}(s'))
 \end{equation*}
 \begin{equation*}
-Q^{*}(s) = \sum_{s'\in{S}} P(s' |s, a) (\gamma \: \underset{a' \in A}{\max} Q^{*}(s',a'))
+Q^{*}(s,a) = \sum_{s'\in{S}} P(s' |s, a) (r(s,a,s') + \gamma \: \underset{a' \in A}{\max} Q^{*}(s',a'))
 \end{equation*}
 状態遷移確率が既知であればDPで計算可能だが、状態遷移確率が未知の場合は試行錯誤で計算するため、Q-learningなどを使用することになる。
 
 \subsubsection*{Q-learning}
 Q-learningでは、Sarsaとは異なり、遷移後の行動選択についての確率は含まれず、常に最大の行動価値を目標値として更新する
 \begin{equation*}
-Q（S_t, A_t) = Q（S_t, A_t) + \alpha (R_{t+1} + \gamma \underset{a' \in A(s')}{\max} Q(S_{t+1},　a') - Q(S_t, A_t))
+Q（S_t, A_t) = Q（S_t, A_t) + \alpha (R_{t+1} + \gamma \underset{a' \in A(s')}{\max} Q(S_{t+1},a') - Q(S_t, A_t))
 \end{equation*}
 
 \subsubsection*{方策のアップデート}
@@ -164,9 +162,9 @@ SarsaやQ-learningは方策に対する価値関数を学習するものであ�
 期待収益を目的関数$J(\theta)$として、これを最大化する確率的方策$\pi_{\theta}$のパラメータ$\theta$を求めることを考える。
 $\pi_{\theta}$は$\theta$に関して微分可能な関数であるとする。
 
-状態空間と行動空間がともに離散の場合には以下のように表せる。
+例えば、softmax関数を使うと、状態空間と行動空間がともに離散の場合には以下のように表せる。
 \begin{equation*}
-\pi_\theta(a|s) = \dfrac{\exp(\theta(s,a))}{\sum_{b \in A} \exp(\theta_{sb})}
+\pi_\theta(a|s) = \dfrac{\exp(\theta_{sa})}{\sum_{b \in A} \exp(\theta_{sb})}
 \end{equation*}
 
 状態空間が連続、行動空間が離散の場合には以下のように表せる。（$\phi(s,a)$ は任意の関数。）
@@ -183,7 +181,7 @@ $\pi_{\theta}$は$\theta$に関して微分可能な関数であるとする。
 \begin{equation*}
 \triangledown_\theta J(\theta) = 
 E_{\pi_{\theta}} [\dfrac{\partial \pi(a|s)}{\partial \theta}  \dfrac{1}{\pi(a|s)} Q^{\pi}(s,a)] 
-= E_{\pi_{\theta}} [\dfrac{\partial \pi(a|s)}{\partial \theta}  \dfrac{1}{\pi(a|s)} Q^{\pi}(s,a)]
+= E_{\pi_{\theta}} [\dfrac{\partial \log \pi_\theta(a|s)}{\partial \theta} Q^{\pi}(s,a)]
 \end{equation*}
 
 勾配は解析的に求まらないため、行動を行ったサンプルから近似する必要がある。
@@ -280,13 +278,12 @@ V(b) = \underset{\alpha \in \Gamma}{\max}\sum_{s \in S}b(s)\alpha(s)
 \subsubsection*{関連するモデル、モデルフリーな手法}
 （省略）
 	
-\subsubsection*{MEMO}
+\subsubsection*{memo}
 \textcolor{blue}{\begin{itemize}
 		\item POMDPでは状態遷移確率や観測関数は既知という前提なのかどうかは良くわからなかった。
 		\item この節の中盤の議論は、信念状態を状態だとみなせば、POMDPはMDPの枠組みで考えられるということだと思った。（計算は複雑になるが）
-		\item Point-Based Value Iterationは、ある信念状態に限定して$\alpha$-ベクトルを更新していくということだと思うのだが、部分集合Bの選び方など、ロジックは良くわからなかった。。
+		\item Point-Based Value Iterationは、ある信念状態に限定して$\alpha$-ベクトルを更新していくということだと思うのだが、部分集合Bの選び方など、ロジックは良くわからなかった。
 \end{itemize}}
-
 
 \end{document}
 
